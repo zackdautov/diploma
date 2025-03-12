@@ -28,6 +28,9 @@ st.set_page_config(
     page_icon=":bar_chart:",
     layout="wide")
 
+st.set_option('deprecation.showPyplotGlobalUse', False)
+
+
 st.markdown('<style>div.block-container{padding-top:1rem;}</style>', unsafe_allow_html=True)
 
 if 'clicks' not in st.session_state:
@@ -35,6 +38,9 @@ if 'clicks' not in st.session_state:
 
 if 'dataex1' not in st.session_state:
     st.session_state['dataex1'] = {}
+
+if 'dataex3' not in st.session_state:
+    st.session_state['dataex3'] = {}
 
 if 'userser' not in st.session_state:
     st.session_state['userser'] = {}
@@ -45,11 +51,23 @@ if 'df_flag' not in st.session_state:
 if 'message_cons' not in st.session_state:
     st.session_state['message_cons'] = {}
 
+if 'message_cons_corr' not in st.session_state:
+    st.session_state['message_cons_corr'] = {}
+
+if 'logs' not in st.session_state:
+    st.session_state['logs'] = ""
+
 if 'dataex' not in st.session_state:
     st.session_state['dataex'] = {}
 
 if 'data_norma' not in st.session_state:
     st.session_state['data_norma'] = {}
+
+if 'data_reg' not in st.session_state:
+    st.session_state['data_reg'] = {}
+
+if 'data_corr' not in st.session_state:
+    st.session_state['data_corr'] = {}
    
 
 if 'history_dicts' not in st.session_state:
@@ -58,8 +76,20 @@ if 'history_dicts' not in st.session_state:
 if 'model_dicts' not in st.session_state:
     st.session_state['model_dicts'] = {}
 
+if 'model_dicts_reg' not in st.session_state:
+    st.session_state['model_dicts_reg'] = {}
+
+if 'model_dicts_corr' not in st.session_state:
+    st.session_state['model_dicts_corr'] = {}
+
 def model_dicts(y_cols,key):
     st.session_state.model_dicts[y_cols] = key
+
+def model_dicts_reg(y_cols,key):
+    st.session_state.model_dicts_reg[y_cols] = key
+
+def model_dicts_corr(y_cols,key):
+    st.session_state.model_dicts_corr[y_cols] = key
 
 def history_dicts(y_cols,key):
     st.session_state.history_dicts[y_cols] = key
@@ -70,14 +100,37 @@ def data_norma(df_x,min,max,normalized_y_dict):
     st.session_state.max = max
     st.session_state.normalized_y_dict = normalized_y_dict
 
+def data_reg(df_x,min,max,normalized_y_dict):
+    st.session_state.reg_df_x = df_x
+    st.session_state.reg_min = min
+    st.session_state.reg_max = max
+    st.session_state.reg_normalized_y_dict = normalized_y_dict
+
+def data_corr(df_x,min,max,normalized_y_dict):
+    st.session_state.corr_df_x = df_x
+    st.session_state.corr_min = min
+    st.session_state.corr_max = max
+    st.session_state.corr_normalized_y_dict = normalized_y_dict
+
+
+
 def click(key):
     st.session_state.clicks[key] = True
 
 def message_cons(key):
     st.session_state.message_cons = f"{st.session_state.message_cons} \n {str(key)}"
 
+def message_cons_corr(key):
+    st.session_state.message_cons_corr = f"{st.session_state.message_cons_corr} \n {str(key)}"
+
+def logs(key):
+    st.session_state.logs = f"{st.session_state.logs} {str(key)}"
+
 def dataex1(key):
     st.session_state.dataex1 = key
+
+def dataex3(key):
+    st.session_state.dataex3 = key
 
 def unclick(key):
     st.session_state.clicks[key] = False
@@ -90,6 +143,7 @@ def userses(key):
 
 def dataex(key):
     st.session_state.dataex = key
+
 
 def login():
     st.sidebar.subheader("Авторизация")
@@ -217,9 +271,23 @@ def main_window(user):
             st.error('Сохраните предварительно данные в БД')
         diagrdata_window()
     if neirodata_button:
-        click("neirodata_button")
-    if st.session_state.clicks["neirodata_button"]:
+        logs("neirodata_button")
+        st.session_state.logs.replace("correldata_button", "", 1) 
+        st.session_state.logs.replace("regrdata_button", "", 1) 
+    if (st.session_state.logs).find("neirodata_button") > 0:
         neuro_window()
+    if regrdata_button:
+        logs("regrdata_button")
+        st.session_state.logs.replace("neirodata_button", "", 1) 
+        st.session_state.logs.replace("correldata_button", "", 1) 
+    if (st.session_state.logs).find("regrdata_button") > 0:
+        regress_window()
+    if correldata_button:
+        logs("correldata_button")
+        st.session_state.logs.replace("regrdata_button", "", 1) 
+        st.session_state.logs.replace("neirodata_button", "", 1) 
+    if (st.session_state.logs).find("correldata_button") > 0:
+        corr_window()
         
 def stat_window():
     database = Database()
@@ -450,10 +518,11 @@ def all_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_dict, m
 
 def regress_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_dict, min_y_dict, learn_df, verbous=True, size=None):
     plt.figure(figsize=(15, 8))
+    print(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_dict, min_y_dict, learn_df)
     i = 1
     plt.suptitle('Результаты регрессионного анализа', fontsize=18)
 
-    if size: #FIXME 19/05
+    if size: 
         max_len = size
         limit = int(max_len * (1 - test_size / 100))
 
@@ -484,7 +553,7 @@ def regress_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_
         i += 1
     plt.tight_layout()
     if verbous:
-        plt.show()
+        st.pyplot() 
     else:
         plt.savefig('regress_data_plot.png')
 
@@ -525,7 +594,7 @@ def corr_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_d
         i += 1
     plt.tight_layout()
     if verbous:
-        plt.show()
+        st.pyplot()
     else:
         plt.savefig('corr_data_plot.png')
 
@@ -534,8 +603,10 @@ def corr_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_d
 def neuro_window():
     learn_df = None
     uploadfile= st.file_uploader("Выберите файл", type=['txt', 'csv', 'xlsx'])
-    load_neuro_button = st.button("загрузить", on_click=click, args=(f'load_neuro_button',)) 
-    if st.session_state.clicks["load_neuro_button"]:
+    load_neuro_button = st.button("загрузить", key = "load_neuro_button") 
+    if load_neuro_button:
+        logs('load_neuro_button')
+    if (st.session_state.logs).find('load_neuro_button') > 0:
         learn_df = pd.read_excel(uploadfile)
         dataex(learn_df)
         X_LIMIT = 0
@@ -728,7 +799,526 @@ def neuro_window():
             database.close()
             return    
     
+def forward_regression(X, y):
+    threshold_in = 0.4
+    initial_list = []
+    included = list(X.columns)
+    while True:
+        changed = False
+        excluded = list(set(X.columns) - set(included))
+        new_pval = pd.Series(index=excluded)
+        model = sm.OLS(y, sm.add_constant(pd.DataFrame(X[included]))).fit()
+        pvalues = model.pvalues.iloc[1:]
+        worst_pval = pvalues.max()
+        if worst_pval > 1 - threshold_in:
+            changed = True
+            worst_feature = pvalues.idxmax()
+            included.remove(worst_feature)
+        if not changed:
+            break
+    return included
 
+
+def backward_regression(X, y):
+    threshold_out = 0.05
+    included = list(X.columns)
+    while True:
+        changed = False
+        model = sm.OLS(y, sm.add_constant(pd.DataFrame(X[included]))).fit()
+        pvalues = model.pvalues.iloc[1:]
+        worst_pval = pvalues.max()
+        if worst_pval > threshold_out:
+            changed=True
+            worst_feature = pvalues.idxmax()
+            included.remove(worst_feature)
+        if not changed:
+            break
+    return included
+
+
+def all_regression(X, y):
+    return list(X.columns)
+
+
+def regress_window():
+    learn_df = None
+    uploadfile2= st.file_uploader("Выберите файл", type=['xlsx'], key = "regres")
+    load_regres_button = st.button("загрузить", key = "load_regres_button") 
+    if load_regres_button:
+        logs("load_regres_button")  
+    if (st.session_state.logs).find("load_regres_button") > 0:
+        learn_df = pd.read_excel(uploadfile2)
+        dataex3(learn_df)
+        X_LIMIT = 0
+        Y_LIMIT = 0
+        cols = learn_df.columns.tolist()
+        for col in cols:
+            if col.startswith('X'):
+                X_LIMIT += 1
+            elif col.startswith('Y'):
+                Y_LIMIT += 1
+
+
+        elim_dict = {
+            'Без исключения': all_regression,
+            'Forward regression': forward_regression,
+            'Backward regression': backward_regression,
+
+        }
+        database = Database()
+        # learn_df = None
+        normalized_df = None
+        normalized_learn_df_x = None
+        model = None
+        pred = None
+        model_dict = []
+        values = {}
+        X_COLS = [f'X{i}' for i in range(1, X_LIMIT + 1)]
+        Y_COLS = [f'Y{i}' for i in range(1, Y_LIMIT + 1)]
+        
+        st.title('Линейный регрессионный анализ')
+            # [sg.Text('_' * 92)],
+            # [sg.Text('Загрузить данные из файла:')],
+            # [sg.InputText(size=(45, 1), key='file'), sg.FileBrowse('Обзор'), sg.Submit('Загрузить данные')],
+
+        st.text(f'Независимые переменные (регрессоры):')
+        st.text(X_COLS)
+        st.text(f'Зависимые переменные: {Y_COLS}')
+        test = st.text_input('% данных для тестирования:', 25)
+        st.write('Метод исключения признаков')
+        elim = st.selectbox( "" , elim_dict)
+        normalreq_button = st.button('Нормировать данные')
+        createreq_button = st.button('Построить модели')
+        kefreq_button = st.button('Коэффициенты моделей')
+        st.text('Y для диаграммы:')
+        checkbox_list = []
+        for y_col in Y_COLS:
+            checkbox_list.append(st.checkbox(y_col, value=True, key=f"_{y_col}"))
+        checkbox_list,
+        size = st.text_input('Число данных(размер выборки) для панели:', '')
+        predict_reg_button = st.button('Прогнозирование данных')
+        save_reg_button = st.button('Сохранить png')
+        save_excell = st.button('Сохранить в Excell')
+
+        df_flag = False
+        learn_df = pd.read_excel(uploadfile2)
+        print(learn_df)
+        #st.write('Данные загружены')
+        test_size = int(test)
+        
+        if normalreq_button:
+            if learn_df is None:
+                st.error('Загрузите данные')
+            elif not database.check_table(DATA_SQL_TABLE):
+                st.error('Сохраните предварительно основные данные в БД')
+            else:    
+                df = database.read_data()
+
+                # Очищаемся от пустых данных
+                df = df.dropna()
+                learn_df = learn_df.dropna()
+
+                # Нормализуем
+                normalized_df = (df - df.mean()) / df.std()
+                normalized_learn_df_x = (learn_df[X_COLS] - learn_df[X_COLS].mean()) / learn_df[X_COLS].std()
+                min_y_dict = {}
+                max_y_dict = {}
+                normalized_y_dict = {}
+                for y_col in Y_COLS:
+                    min_y_dict[y_col] = learn_df[y_col].min()
+                    max_y_dict[y_col] = learn_df[y_col].max() - min_y_dict[y_col]
+                    normalized_y_dict[y_col] = (learn_df[y_col] - min_y_dict[y_col]) / max_y_dict[y_col]
+                    
+                print(normalized_learn_df_x)
+                print('Данные нормированы')
+
+                # Features elimination
+                X_COLS = elim_dict[elim](normalized_learn_df_x, normalized_y_dict[y_col])
+                normalized_learn_df_x = normalized_learn_df_x[X_COLS]
+                print("Были отобраны следующие признаки:")
+                print(X_COLS)
+
+                st.write('Данные нормированы, признаки отобраны')
+                data_reg(normalized_learn_df_x,min_y_dict,max_y_dict,normalized_y_dict)
+
+        if createreq_button:
+            normalized_learn_df_x = st.session_state.reg_df_x
+            min_y_dict = st.session_state.reg_min
+            max_y_dict = st.session_state.reg_max
+            normalized_y_dict = st.session_state.reg_normalized_y_dict
+
+            if normalized_learn_df_x is None:
+                st.error('Нормируйте данные')
+
+            else:    
+                X = np.asarray(normalized_learn_df_x).astype(float)
+                input_dim = len(X_COLS)
+                Y_dict = {}
+                model_dict = {}
+                history_dict = {}
+
+                for y_col in Y_COLS:
+                    print(f"Модель линейной регреcсии для {y_col}:")
+                    model_dict[y_col] = LinearRegression().fit(X, normalized_y_dict[y_col])
+                    r_sq = model_dict[y_col].score(X, normalized_y_dict[y_col])
+                    model_dicts_reg(y_col,model_dict[y_col])
+                    print('coefficient of determination:', r_sq)
+                    print('intercept:', model_dict[y_col].intercept_)
+                    print("-" * 30)
+
+                print("Все модели линейной регрессии построены")
+                st.write("Все модели линейной регрессии построены")
+
+        if save_excell:
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.reg_df_x
+            min_y_dict = st.session_state.reg_min
+            max_y_dict = st.session_state.reg_max
+            normalized_y_dict = st.session_state.reg_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_reg[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:
+                for y_col in Y_COLS:
+                    pred = model_dict[y_col].predict(normalized_learn_df_x).flatten()
+                    #Возвращем данные к нашей размерности - обратное нормирование
+                    learn_df[y_col] = pred * max_y_dict[y_col] + min_y_dict[y_col]
+                res_file = "result_reg.xlsx"
+                learn_df[X_COLS + Y_COLS].to_excel(res_file)
+                print(f"Результат сохранен в {res_file}")
+                st.write(f"Результат сохранен в {res_file}")
+
+        if kefreq_button:
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.reg_df_x
+            min_y_dict = st.session_state.reg_min
+            max_y_dict = st.session_state.reg_max
+            normalized_y_dict = st.session_state.reg_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_reg[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:    
+                for y_col in Y_COLS:
+                    print(f"Коэффициенты линейной регресии для {y_col}:")
+                    print('slope:', model_dict[y_col].coef_)
+                    print("-" * 30)
+                st.write("Коэффициенты отображены")
+
+        if predict_reg_button:
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.reg_df_x
+            min_y_dict = st.session_state.reg_min
+            max_y_dict = st.session_state.reg_max
+            normalized_y_dict = st.session_state.reg_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_reg[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:    
+                try:
+                    size = int(values['size'])
+                except:
+                    size = None
+                new_y_cols = []
+                print(values)
+                for y_col in Y_COLS:
+                    if values.get(f"_{y_col}"):
+                        new_y_cols.append(y_col)
+                regress_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_dict, min_y_dict, learn_df,
+                            verbous=True)
+        if save_reg_button:
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.reg_df_x
+            min_y_dict = st.session_state.reg_min
+            max_y_dict = st.session_state.reg_max
+            normalized_y_dict = st.session_state.reg_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_reg[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:
+                regress_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_dict, min_y_dict, learn_df,
+                            verbous=False)
+                st.write("Графики сохранены в png файлы")
+
+def corr_text(corr_df, x_cols, y_cols):
+    res = ''
+    for x in x_cols:
+        for y in y_cols:
+            res += f'{x}-{y}:{abs(corr_df.loc[x][y])}\n'
+    return res
+
+
+def filter_cols_by_corr(corr_df, x_cols, y_cols, corr_level):
+    res = []
+    for x in x_cols:
+        flag = True
+        for y in y_cols:
+            if abs(corr_df.loc[x][y]) < corr_level:
+                flag = False
+        if flag:
+            res.append(x)
+    return res
+
+def corr_window():
+    learn_df = None
+    uploadfile3= st.file_uploader("Выберите файл", type=['xlsx'], key = "regres")
+    load_corr_button = st.button("загрузить", key = "load_corr_button") 
+    if load_corr_button:
+        logs("load_corr_button")  
+    if (st.session_state.logs).find("load_corr_button") > 0:
+        learn_df = pd.read_excel(uploadfile3)
+        dataex3(learn_df)
+        X_LIMIT = 0
+        Y_LIMIT = 0
+        cols = learn_df.columns.tolist()
+        for col in cols:
+            if col.startswith('X'):
+                X_LIMIT += 1
+            elif col.startswith('Y'):
+                Y_LIMIT += 1
+
+        cols = learn_df.columns.tolist()
+        corr_cols = []
+        for col in cols:
+            if col.startswith('X') or col.startswith('Y'):
+                corr_cols.append((col))
+        corr_matrix = learn_df.loc[:, corr_cols].corr()
+
+        database = Database()
+        # learn_df = None
+        normalized_df = None
+        normalized_learn_df_x = None
+        model = None
+        pred = None
+        model_dict = []
+        values = {}
+        X_COLS_START = [f'X{i}' for i in range(1, X_LIMIT + 1)]
+        X_COLS = X_COLS_START
+        Y_COLS = [f'Y{i}' for i in range(1, Y_LIMIT + 1)]
+        res_text = corr_text(corr_matrix, X_COLS_START, Y_COLS)
+        st.title('Корреляционный анализ')
+        test = st.text_input('% данных для тестирования:', 25)
+        corr_matrix_button = st.button('Корреляционная матрица')
+        
+        min_corr_lvl = st.slider('Настройка min уровня корреляции', 0.0, 1.0, 0.0, 0.01)
+        normalcorr_button = st.button('Нормировать данные')
+        createcorr_button = st.button('Построить модели')
+        corr_ur_button = st.button('Корреляционные уравнения')
+        st.text('Y для диаграммы:')
+        checkbox_list = []
+        for y_col in Y_COLS:
+            checkbox_list.append(st.checkbox(y_col, value=True, key=f"_{y_col}"))
+        checkbox_list,
+        size = st.text_input('Число данных(размер выборки) для панели:', '')
+        predict_corr_button = st.button('Прогнозирование данных')
+        save_corr_button = st.button('Сохранить png')
+        save_excell = st.button('Сохранить в Excell')
+        df_flag = False
+        old_level = 0
+
+        if float(min_corr_lvl) != old_level:
+            old_level = float(min_corr_lvl)
+            X_COLS = filter_cols_by_corr(corr_matrix, X_COLS_START, Y_COLS, old_level)
+            res_text = corr_text(corr_matrix, X_COLS, Y_COLS)
+            message_cons_corr(res_text)
+
+        #     if event in (None, 'Выход', sg.WIN_CLOSED):
+        #         database.close()
+        #         window.close()
+        #         return
+
+        if normalcorr_button:
+            if learn_df is None:
+                st.error('Загрузите данные')
+            elif not database.check_table(DATA_SQL_TABLE):
+                st.error('Сохраните предварительно основные данные в БД')
+            else:    
+                df = database.read_data()
+
+                # Очищаемся от пустых данных
+                df = df.dropna()
+                learn_df = learn_df.dropna()
+
+                # Нормализуем
+                normalized_df = (df - df.mean()) / df.std()
+                normalized_learn_df_x = (learn_df[X_COLS] - learn_df[X_COLS].mean()) / learn_df[X_COLS].std()
+                min_y_dict = {}
+                max_y_dict = {}
+                normalized_y_dict = {}
+                for y_col in Y_COLS:
+                    min_y_dict[y_col] = learn_df[y_col].min()
+                    max_y_dict[y_col] = learn_df[y_col].max() - min_y_dict[y_col]
+                    normalized_y_dict[y_col] = (learn_df[y_col] - min_y_dict[y_col]) / max_y_dict[y_col]
+                    
+                message_cons_corr(normalized_learn_df_x)
+                print('Данные нормированы')
+                message_cons_corr('Данные нормированы, признаки отобраны')
+                data_corr(normalized_learn_df_x,min_y_dict,max_y_dict,normalized_y_dict)
+
+            # if event == 'Нормировать данные':
+            #     if learn_df is None:
+            #         sg.popup('Загрузите данные')
+            #         continue
+            #     if not database.check_table(DATA_SQL_TABLE):
+            #         sg.popup('Сохраните предварительно основные данные в БД')
+            #         continue
+            #     df = database.read_data()
+
+            #     # Очищаемся от пустых данных
+            #     df = df.dropna()
+            #     learn_df = learn_df.dropna()
+
+            #     # Нормализуем
+            #     normalized_df = (df - df.mean()) / df.std()
+            #     normalized_learn_df_x = (learn_df[X_COLS] - learn_df[X_COLS].mean()) / learn_df[X_COLS].std()
+            #     min_y_dict = {}
+            #     max_y_dict = {}
+            #     normalized_y_dict = {}
+            #     for y_col in Y_COLS:
+            #         min_y_dict[y_col] = learn_df[y_col].min()
+            #         max_y_dict[y_col] = learn_df[y_col].max() - min_y_dict[y_col]
+            #         normalized_y_dict[y_col] = (learn_df[y_col] - min_y_dict[y_col]) / max_y_dict[y_col]
+
+            #     print(normalized_learn_df_x)
+            #     print('Данные нормированы, признаки отобраны')
+            #     sg.popup('Данные нормированы, признаки отобраны')
+
+            
+        if createcorr_button:
+            normalized_learn_df_x = st.session_state.corr_df_x
+            min_y_dict = st.session_state.corr_min
+            max_y_dict = st.session_state.corr_max
+            normalized_y_dict = st.session_state.corr_normalized_y_dict
+
+            if normalized_learn_df_x is None:
+                st.error('Нормируйте данные')
+
+            else:    
+            #     # Отделяем Х
+                 X = np.asarray(normalized_learn_df_x).astype(float)
+                 input_dim = len(X_COLS)
+            #     Y_dict = {}
+                 model_dict = {}
+            #     history_dict = {}
+
+                 for y_col in Y_COLS:
+                     print(f"Корреляционная модель для {y_col}:")
+                     model_dict[y_col] = LinearCorrModel().fit(X, normalized_y_dict[y_col])
+                     r_sq = model_dict[y_col].score(X, normalized_y_dict[y_col])
+                     model_dicts_corr(y_col,model_dict[y_col])
+                     print('R^2', r_sq)
+                     print("-" * 30)
+
+                 print("Все корреляционные модели построены")
+                 message_cons_corr("Все корреляционные модели построены")
+
+        if save_excell:
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.corr_df_x
+            min_y_dict = st.session_state.corr_min
+            max_y_dict = st.session_state.corr_max
+            normalized_y_dict = st.session_state.corr_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_corr[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:
+                for y_col in Y_COLS:
+                    pred = model_dict[y_col].predict(normalized_learn_df_x).flatten()
+                    #Возвращем данные к нашей размерности - обратное нормирование
+                    learn_df[y_col] = pred * max_y_dict[y_col] + min_y_dict[y_col]
+                res_file = "result_corr.xlsx"
+                learn_df[X_COLS + Y_COLS].to_excel(res_file)
+                print(f"Результат сохранен в {res_file}")
+                message_cons_corr(f"Результат сохранен в {res_file}")
+
+        if corr_ur_button:
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.corr_df_x
+            min_y_dict = st.session_state.corr_min
+            max_y_dict = st.session_state.corr_max
+            normalized_y_dict = st.session_state.corr_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_corr[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:
+                for y_col in Y_COLS:
+                    print(f"{y_col} = ", end='')
+                    for i, coef in enumerate(model_dict[y_col].coef_):
+                        if i != 0 and coef >= 0:
+                            print('+', end='')
+                        print(f"{coef}*{X_COLS[i]}", end='')
+                    print()
+                    print("-" * 30)
+                message_cons_corr("Уравнения отображены")
+
+        if predict_corr_button :
+            test_size = int(test)
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.corr_df_x
+            min_y_dict = st.session_state.corr_min
+            max_y_dict = st.session_state.corr_max
+            normalized_y_dict = st.session_state.corr_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_corr[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:    
+                try:
+                    size = int(size)
+                except:
+                    size = None
+                new_y_cols = []
+                for y_col in Y_COLS:
+                    if values.get(f"_{y_col}"):
+                        new_y_cols.append(y_col)
+                corr_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_dict, min_y_dict,
+                                learn_df,
+                                verbous=True)
+        if save_corr_button:
+            model_dict = {}
+            normalized_learn_df_x = st.session_state.corr_df_x
+            min_y_dict = st.session_state.corr_min
+            max_y_dict = st.session_state.corr_max
+            normalized_y_dict = st.session_state.corr_normalized_y_dict
+            for y_col in Y_COLS:
+                model_dict[y_col] = st.session_state.model_dicts_corr[y_col]
+
+            if not model_dict:
+                st.error('Постройте модель')
+            else:
+                corr_data_plot(test_size, Y_COLS, model_dict, normalized_learn_df_x, max_y_dict, min_y_dict,learn_df,
+                            verbous=False)
+                message_cons_corr("Графики сохранены в png файлы")
+
+        if corr_matrix_button:
+            cols = learn_df.columns.tolist()
+            corr_cols = []
+            for col in cols:
+                if col.startswith('X') or col.startswith('Y'):
+                    corr_cols.append((col))
+
+            corr_matrix = learn_df.loc[:, corr_cols].corr()
+            print(corr_matrix)
+
+            f, ax = plt.subplots(figsize=(10, 10))
+            sn.heatmap(corr_matrix, ax=ax, cmap="YlGnBu", linewidths=0.1, annot=True, annot_kws={"size": 6})
+            plt.title("Корреляционная матрица")
+            #plt.show()
+            st.pyplot()
+            
+        st.text_area("console",str(st.session_state.message_cons_corr))
 
     
 def main():
@@ -745,7 +1335,7 @@ def main():
     
 
 if __name__ == "__main__":
-    #st.write(st.session_state)
+    st.write(st.session_state)
     main()
 
     
