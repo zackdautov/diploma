@@ -271,21 +271,18 @@ def main_window(user):
             st.error('Сохраните предварительно данные в БД')
         diagrdata_window()
     if neirodata_button:
+        st.session_state.logs = ''
         logs("neirodata_button")
-        st.session_state.logs.replace("correldata_button", "", 1) 
-        st.session_state.logs.replace("regrdata_button", "", 1) 
     if (st.session_state.logs).find("neirodata_button") > 0:
         neuro_window()
     if regrdata_button:
+        st.session_state.logs = ''
         logs("regrdata_button")
-        st.session_state.logs.replace("neirodata_button", "", 1) 
-        st.session_state.logs.replace("correldata_button", "", 1) 
     if (st.session_state.logs).find("regrdata_button") > 0:
         regress_window()
     if correldata_button:
+        st.session_state.logs = ''
         logs("correldata_button")
-        st.session_state.logs.replace("regrdata_button", "", 1) 
-        st.session_state.logs.replace("neirodata_button", "", 1) 
     if (st.session_state.logs).find("correldata_button") > 0:
         corr_window()
         
@@ -1068,7 +1065,7 @@ def filter_cols_by_corr(corr_df, x_cols, y_cols, corr_level):
 
 def corr_window():
     learn_df = None
-    uploadfile3= st.file_uploader("Выберите файл", type=['xlsx'], key = "regres")
+    uploadfile3= st.file_uploader("Выберите файл", type=['xlsx'], key = "corr")
     load_corr_button = st.button("загрузить", key = "load_corr_button") 
     if load_corr_button:
         logs("load_corr_button")  
@@ -1287,6 +1284,7 @@ def corr_window():
                                 learn_df,
                                 verbous=True)
         if save_corr_button:
+            test_size = int(test)
             model_dict = {}
             normalized_learn_df_x = st.session_state.corr_df_x
             min_y_dict = st.session_state.corr_min
@@ -1335,7 +1333,7 @@ def main():
     
 
 if __name__ == "__main__":
-    st.write(st.session_state)
+    #st.write(st.session_state)
     main()
 
     
